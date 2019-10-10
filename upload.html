@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/mint-ui/lib/style.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            overflow: hidden;
+        }
+        #app {
+            position: relative;
+            padding: 20px;
+            text-align: center;
+        }
+        #upload {
+            position: absolute;
+            left: 40%;
+            top: 20px;
+            opacity: 0;
+        }
+        #label {
+            padding: 10px;
+            border-radius: 5px;
+            color: white;
+            background-color: #729ddd;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <input
+        id="upload"
+        type="file"
+        @change="onChange"
+    />
+    <label id="label" for="upload">
+        上传海报
+    </label>
+</div>
+</body>
+<!-- 先引入 Vue -->
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<!-- 引入组件库 -->
+<script src="https://unpkg.com/mint-ui/lib/index.js"></script>
+<script src="https://cdn.bootcss.com/axios/0.19.0-beta.1/axios.min.js"></script>
+<script>
+    new Vue({
+        el: '#app',
+        methods: {
+            onChange: function (e) {
+                this.$indicator.open('上传中');
+                var form = new FormData();
+                var file = e.target.files[0];
+                form.append('file', file);
+                axios({
+                   url: 'https://7BdT5yj1.api.lncld.net/1.1/files/' + file.name,
+                   method: 'POST',
+                   headers: {
+                       "X-LC-Id": '7BdT5yj1KDaxAstXqfGoBdxv-gzGzoHsz',
+                       "X-LC-Key": 'Uy0SnN3eO1bvHPXbDDVeXmYp',
+                       "Content-Type": 'image/png',
+                   },
+                   data: form,
+                }).then((res) => {
+                    return axios({
+                        url: 'https://7BdT5yj1.api.lncld.net/1.1/classes/Poster',
+                        method: 'POST',
+                        headers: {
+                            "X-LC-Id": '7BdT5yj1KDaxAstXqfGoBdxv-gzGzoHsz',
+                            "X-LC-Key": 'Uy0SnN3eO1bvHPXbDDVeXmYp',
+                        },
+                        data: {
+                            name: res.data.name,
+                            url: res.data.url,
+                            objectId: res.data.objectId,
+                        },
+                    })
+                }).then(() => {
+                    e.target.value = '';
+                    this.$indicator.close();
+                    this.$toast('上传成功');
+                }).catch(() => {
+                    e.target.value = '';
+                    this.$indicator.close();
+                    this.$toast('上传失败');
+                });
+            }
+        }
+    })
+</script>
+</html>

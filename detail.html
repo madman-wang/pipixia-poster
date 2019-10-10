@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/mint-ui/lib/style.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        img {
+            display: block;
+            width: 100vw;
+            height: auto;
+        }
+        #app {
+            position: relative;
+        }
+        #upload {
+            position: absolute;
+            opacity: 0;
+        }
+        #qr {
+            position: absolute;
+            z-index: 1000;
+            height: auto;
+        }
+        .mint-popup {
+            width: 100vw;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div id="upload">
+        <input id="file" type="file" @change="onChange">
+        <label id="label" for="file">上传</label>
+    </div>
+    <mt-popup
+        v-model="popupVisible"
+        position="bottom"
+    >
+        <div>宽度</div>
+        <mt-range
+                v-model="qrWidth"
+                :min="0"
+                :max="width"
+        ></mt-range>
+        <div>右间距</div>
+        <mt-range
+            v-model="qrRight"
+            :min="0"
+            :max="width"
+        ></mt-range>
+        <div>底部间距</div>
+        <mt-range
+            v-model="qrBottom"
+            :min="0"
+            :max="width"
+        ></mt-range>
+    </mt-popup>
+    <img
+         :src="url"
+         @click="showUpload"
+    >
+    <img
+        id="qr"
+        :src="qr"
+        @click="showModal"
+        :style="qrStyle"
+    />
+</div>
+</body>
+<!-- 先引入 Vue -->
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<!-- 引入组件库 -->
+<script src="https://unpkg.com/mint-ui/lib/index.js"></script>
+<script src="https://cdn.bootcss.com/axios/0.19.0-beta.1/axios.min.js"></script>
+<script>
+    new Vue({
+        el: '#app',
+        data: function() {
+            return {
+                width: 0,
+                height: 0,
+                url: '',
+                qr: '',
+                qrWidth: 100,
+                qrRight: 20,
+                qrBottom: 20,
+                popupVisible: false,
+            }
+        },
+        computed: {
+            qrStyle: function () {
+                return {
+                    width: this.qrWidth + 'px',
+                    right: this.qrRight + 'px',
+                    bottom: this.qrBottom + 'px',
+                }
+            }
+        },
+        created: function () {
+            this.width = window.innerWidth;
+            this.height = window.innerHeight;
+            var url = window.location.search.slice(5);
+            var index = url.indexOf('?');
+            this.url = url.slice(0, index);
+            this.$toast('点击图片上传二维码');
+        },
+        methods: {
+            showModal: function() {
+              this.popupVisible = true;
+            },
+            showUpload: function () {
+                document.querySelector('#label').click();
+            },
+            onChange: function (e) {
+                this.$indicator.open('上传中');
+                var form = new FormData();
+                var file = e.target.files[0];
+                var where = JSON.stringify({
+                   name: file.name,
+                });
+                form.append('file', file);
+                axios({
+                    url: 'https://7BdT5yj1.api.lncld.net/1.1/classes/_File?where=' + where,
+                    method: 'GET',
+                    headers: {
+                        "X-LC-Id": '7BdT5yj1KDaxAstXqfGoBdxv-gzGzoHsz',
+                        "X-LC-Key": 'Uy0SnN3eO1bvHPXbDDVeXmYp',
+                    },
+                }).then(res => {
+                    var data = res.data.results;
+                    if (data && data.length) {
+                        this.qr = data[0].url;
+                        this.$indicator.close();
+                        return this.$toast('点击二维码设置位置大小');
+                    }
+
+                    return axios({
+                        url: 'https://7BdT5yj1.api.lncld.net/1.1/files/' + file.name,
+                        method: 'POST',
+                        headers: {
+                            "X-LC-Id": '7BdT5yj1KDaxAstXqfGoBdxv-gzGzoHsz',
+                            "X-LC-Key": 'Uy0SnN3eO1bvHPXbDDVeXmYp',
+                            "Content-Type": 'image/png',
+                        },
+                        data: form,
+                    }).then((res) => {
+                        this.qr = res.data.url;
+                        e.target.value = '';
+                        this.$indicator.close();
+                        this.$toast('点击二维码设置位置大小');
+                    }).catch(() => {
+                        e.target.value = '';
+                        this.$indicator.close();
+                        this.$toast('上传失败');
+                    });
+                });
+            }
+        }
+    })
+</script>
+</html>

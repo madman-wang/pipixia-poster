@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/mint-ui/lib/style.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        .item {
+            box-sizing: border-box;
+            display: inline-block;
+            padding: 10px;
+            width: 50%;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div
+        class="list"
+        v-infinite-scroll="loadMore"
+        infinite-scroll-disabled="loading"
+        infinite-scroll-distance="10"
+    >
+        <a
+            v-for="item in list"
+            :href="'detail.html?url='+item.url"
+        >
+            <img
+                class="item"
+                :src="item.url"
+            />
+        </a>
+    </div>
+</div>
+</body>
+<!-- 先引入 Vue -->
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<!-- 引入组件库 -->
+<script src="https://unpkg.com/mint-ui/lib/index.js"></script>
+<script src="https://cdn.bootcss.com/axios/0.19.0-beta.1/axios.min.js"></script>
+<script>
+    new Vue({
+        el: '#app',
+        data: function() {
+          return {
+              list: [],
+              total: 0,
+              width: 0,
+              loading: false,
+          }
+        },
+        created: function () {
+          this.width = (window.innerWidth / 2 - 20) * 2;
+        },
+        methods: {
+            openDetail: function(item) {
+              console.log()
+            },
+            loadMore: function () {
+                if (this.list.length && this.list.length <= this.total) {
+                    return this.$toast('没有更多了');
+                }
+                this.fetch();
+            },
+            fetch: function () {
+                this.$indicator.open('正在获取数据');
+                axios({
+                    url: 'https://7BdT5yj1.api.lncld.net/1.1/classes/Poster?count=1&limit=30',
+                    method: 'get',
+                    headers: {
+                        "X-LC-Id": '7BdT5yj1KDaxAstXqfGoBdxv-gzGzoHsz',
+                        "X-LC-Key": 'Uy0SnN3eO1bvHPXbDDVeXmYp',
+                    },
+                }).then((res) => {
+                    var list = res.data.results.map(item => {
+                        item.url = item.url + '?imageView2/1/w/' + this.width + '/h/' + this.width;
+                        return item;
+                    });
+                    this.list = [].concat(list, this.list);
+                    this.total = res.data.count;
+                    this.$indicator.close();
+                }).catch(() => {
+                    this.$indicator.close();
+                });
+            },
+        }
+    })
+</script>
+</html>
